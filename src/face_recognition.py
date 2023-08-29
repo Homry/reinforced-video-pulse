@@ -43,14 +43,15 @@ class FaceDetector:
                     self.__lk.init_points(points)
                     self.add = True
                     self.__time.init_vector(points)
-                points = self.__lk.detect(image)
-                if points is not None:
-                    self.__time.add_in_vector(points)
-
-                    for i in points:
-                        cv2.circle(image, (int(i[0]), int(i[1])), 2, (0, 0, 255), -1)
-
-                cv2.imshow('Face Landmarks Detection', image)
+                else:
+                    points = self.__lk.detect(image)
+                    if points is not None:
+                        self.__time.add_in_vector(points)
+                        for i in points:
+                            cv2.circle(image, (int(i[0]), int(i[1])), 2, (0, 0, 255), -1)
+                    cv2.imshow('Face Landmarks Detection', image)
+                    if cv2.waitKey(1) & 0xFF == ord('q'):
+                        break
 
             # Отображение результата
         self.__video.close()
