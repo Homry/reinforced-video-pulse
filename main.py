@@ -7,7 +7,7 @@ if __name__ == '__main__':
     face.process_video()
 
     time_series.interpolate_signal()
-    time_series.distance_filter()
-
+    # time_series.distance_filter()
+    time_series.butter_filter()
 
     print(time_series)
