@@ -1,14 +1,16 @@
 import numpy as np
 import scipy.interpolate as interp
 from scipy import signal
-from collections import Counter
+import statistics
 from matplotlib import pyplot as plt
+from sklearn.decomposition import PCA
 
 class TimeSeries:
     def __init__(self):
         self.__vector = None
         self.__old_freq = 30
         self.__new_freq = 250
+        self.pca_transform = PCA(n_components = 1)
 
     def init_vector(self, vector):
         self.__vector = [[i[1]] for i in vector]
@@ -29,31 +31,25 @@ class TimeSeries:
         for i in self.__vector:
             cs = interp.CubicSpline(x, i)
             vector.append(cs(x_int))
-            print(f'before = {len(i)} after =  {len(vector[-1])}')
         self.__vector = vector
         # for i, j in enumerate(self.__vector):
         #     x = np.arange(0, len(j) / self.__new_freq, 1 / self.__new_freq)
         #     plt.plot(x, j)
         #     plt.show()
 
-    def calculate_mode(self, data):
 
-        mode = Counter(data).most_common(1)[0][0]
-        return mode
 
     def distance_filter(self):
         vector = []
+        print(f'len before = {len(self.__vector)}')
         for i in self.__vector:
             distance = [abs(i[j]-i[j+1]) for j in range(len(i)-1)]
-            mode = self.calculate_mode(distance)
+            mode = statistics.median(distance)
             status = [True if j <= mode else False for j in distance]
             if False not in status:
                 vector.append(i)
         self.__vector = vector
-        for i, j in enumerate(self.__vector):
-            x = np.arange(0, len(j) / self.__new_freq, 1 / self.__new_freq)
-            plt.plot(x, j)
-            plt.show()
+        print(f'len after = {len(self.__vector)}')
 
 
     def butter_filter(self):
@@ -67,10 +63,24 @@ class TimeSeries:
         for i in self.__vector:
             vector.append(signal.lfilter(b, a, i))
         self.__vector = vector
-        for i, j in enumerate(self.__vector):
-            x = np.arange(0, len(j) / self.__new_freq, 1 / self.__new_freq)
-            plt.plot(x, j)
-            plt.show()
+        # for i, j in enumerate(self.__vector):
+        #     x = np.arange(0, len(j) / self.__new_freq, 1 / self.__new_freq)
+
+
+    def pca(self):
+        vector = []
+        x = np.arange(0, len(self.__vector[0]) / self.__old_freq, 1 / self.__old_freq)
+        for i in self.__vector:
+            # print(f'len - x = {len(x)}')
+            # print(f'len - y = {len(i)}')
+            X = np.vstack((x, i))
+            XPCAreduced = self.pca_transform.fit_transform(np.transpose(X))
+            points_after_pca = [j[0] for j in XPCAreduced]
+            # print(len(points_after_pca))
+            # plt.plot(x, points_after_pca)
+            # plt.show()
+
+
 
 
 
