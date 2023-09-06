@@ -10,4 +10,5 @@ if __name__ == '__main__':
 
     time_series.butter_filter()
     time_series.pca()
+    time_series.find_signals_peaks()
 

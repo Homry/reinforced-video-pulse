@@ -4,6 +4,7 @@ from scipy import signal
 import statistics
 from matplotlib import pyplot as plt
 from sklearn.decomposition import PCA
+from scipy.signal import find_peaks
 
 class TimeSeries:
     def __init__(self):
@@ -69,7 +70,7 @@ class TimeSeries:
 
     def pca(self):
         vector = []
-        x = np.arange(0, len(self.__vector[0]) / self.__old_freq, 1 / self.__old_freq)
+        x = np.arange(0, len(self.__vector[0]) / self.__new_freq, 1 / self.__new_freq)
         for i in self.__vector:
             # print(f'len - x = {len(x)}')
             # print(f'len - y = {len(i)}')
@@ -79,6 +80,19 @@ class TimeSeries:
             # print(len(points_after_pca))
             # plt.plot(x, points_after_pca)
             # plt.show()
+
+    def find_signals_peaks(self):
+        x = np.arange(0, len(self.__vector[0]) / self.__new_freq, 1 / self.__new_freq)
+        all_beats = []
+        for signal in self.__vector:
+            peaks, _ = find_peaks(signal)
+            plt.plot(x, signal)
+            plt.plot(x[peaks], signal[peaks], "o", color='red')
+            plt.show()
+            heart_beat = len(peaks)/(len(self.__vector[0]) / self.__new_freq)*60
+            all_beats.append(heart_beat)
+            print(heart_beat)
+        print(f'average = {sum(all_beats)/len(all_beats)}')
 
 
 
