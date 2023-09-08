@@ -1,13 +1,14 @@
-from src import FaceDetector, TimeSeries
+from src import FaceFeaturePointsDetector, TimeSeries
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     time_series = TimeSeries()
-    face = FaceDetector('./videos/test_amp5.mp4', time_series)
+    face = FaceFeaturePointsDetector('./videos/test2.mp4', time_series)
+    face.init_detector()
     face.process_video()
     # time_series.distance_filter()
-    time_series.interpolate_signal()
 
+    time_series.interpolate_signal()
     time_series.butter_filter()
     time_series.pca()
     time_series.find_signals_peaks()
