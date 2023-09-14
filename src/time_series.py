@@ -19,7 +19,8 @@ class TimeSeries:
         self.__vector = [[i[1]] for i in vector]
 
     def add_in_vector(self, vector, status):
-        [self.__vector[i].append(vector[i][0][1]) for i, j in enumerate(status) if j == 1]
+        # [self.__vector[i].append(vector[i][0][1]) for i, j in enumerate(status) if j == 1]
+        [self.__vector[i].append(vector[i][1]) for i, j in enumerate(status)]
 
     def __str__(self):
         return f'{self.__vector}, {len(self.__vector[0])}'
@@ -27,12 +28,10 @@ class TimeSeries:
     def interpolate_signal(self):
         vector = []
         for i in self.__vector:
-            print(i)
             x = np.arange(0, len(i) / self.__old_freq, 1 / self.__old_freq)
             if len(x) > len(i):
                 x = np.delete(x, -1)
             x_int = np.linspace(np.min(x), np.max(x), int(len(x) * 8.333))
-            print(f'x - {len(x)} i - {len(i)}')
             cs = interp.CubicSpline(x, i)
             vector.append(cs(x_int))
         self.__vector = vector
@@ -47,7 +46,7 @@ class TimeSeries:
         count_of_len = {i: [] for i in uniq_len}
         list(map(lambda x: count_of_len[x].append(1), len_vector))
         count_of_len = {i: len(j) for i, j in count_of_len.items()}
-        print(count_of_len)
+
         max_key, max_item = list(count_of_len.items())[0]
         for key, item in count_of_len.items():
             if item > max_item:
@@ -58,7 +57,7 @@ class TimeSeries:
 
     def distance_filter(self):
         vector = []
-        print(f'len before = {len(self.__vector)}')
+
         for i in self.__vector:
             distance = [abs(i[j] - i[j + 1]) for j in range(len(i) - 1)]
             mode = statistics.median(distance)
@@ -66,7 +65,7 @@ class TimeSeries:
             if False not in status:
                 vector.append(i)
         self.__vector = vector
-        print(f'len after = {len(self.__vector)}')
+
 
     def butter_filter(self):
         passband_freq = [0.75, 5]
@@ -131,7 +130,7 @@ class TimeSeries:
             # plt.plot(x, signal, label=f'{i}', color='red')
             plt.plot(x,signal)
             # plt.plot(x[peaks], signal[peaks], "o", color='red')
-            plt.plot(x[peaks], signal[peaks], "o", color='red')
+            # plt.plot(x[peaks], signal[peaks], "o", color='red')
 
             heart_beat = len(peaks) / (len(signal) / self.__new_freq) * 60
             all_beats.append(heart_beat)
