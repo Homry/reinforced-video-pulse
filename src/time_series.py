@@ -18,9 +18,9 @@ class TimeSeries:
     def init_vector(self, vector):
         self.__vector = [[i[1]] for i in vector]
 
-    def add_in_vector(self, vector, status):
+    def add_in_vector(self, vector, status=None):
         # [self.__vector[i].append(vector[i][0][1]) for i, j in enumerate(status) if j == 1]
-        [self.__vector[i].append(vector[i][1]) for i, j in enumerate(status)]
+        [self.__vector[i].append(vector[i][1]) for i, j in enumerate(vector)]
 
     def __str__(self):
         return f'{self.__vector}, {len(self.__vector[0])}'
