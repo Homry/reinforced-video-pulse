@@ -43,9 +43,9 @@ class FaceFeaturePointsDetector:
     def process_video(self):
         while self.video.current_frame != self.video.total_frames:
             image = self.video.read_frame()
+            _, _, _, _, new_image = self.face_detector.find_face(image)
             points = np.array(self.mediapipe.get_coords_from_face(image))
             points = points[self.points_use_vector == 1]
-            _, _, _, _, new_image = self.face_detector.find_face(image)
             if new_image is None:
                 continue
             aaa = new_image.copy()

@@ -155,12 +155,12 @@ class TimeSeries:
             percentage = maxFreqPow / total_power
             freq_.append(maxFreq)
             per.append(percentage)
-            print(f' maxFreq = {maxFreq}, percentage = {percentage}, bpm = {60/maxFreq}')
+            print(f' maxFreq = {maxFreq}, percentage = {percentage}, bpm = {60*maxFreq}')
 
             print("beat", heart_beat)
         print(f'average = {sum(all_beats) / len(all_beats)}')
         idx = np.argmax(per)
-        print(f'bpm = {60/freq_[idx]}')
+        print(f'bpm = {60*freq_[idx]}')
         plt.show()
 
         # for i, signal in enumerate(self.my_pca):
