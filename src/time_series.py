@@ -78,46 +78,10 @@ class TimeSeries:
         for i in self.__vector:
             vector.append(signal.lfilter(b, a, i))
         self.__vector = vector
-        # for i, j in enumerate(self.__vector):
-        #     x = np.arange(0, len(j) / self.__new_freq, 1 / self.__new_freq)
 
     def pca(self):
-
-
-
-        # vector = np.array(self.__vector.copy())
-        #
-        # shape = vector.shape
-        # FF = 1/shape[1]*vector@vector.T
-        #
-        # covmat = np.cov(vector)
-        # _, vecs = np.linalg.eig(covmat)
-        # self.my_pca1 = np.array([np.dot(vecs[i], vector) for i in range(5)])
-        #
-        # _, vecs = np.linalg.eig(FF)
-        # # Xnew = np.dot(v, vector)
-        # print(vecs.shape)
-        # v = -vecs[:, 1]
-        # print(v.shape)
-        # self.my_pca = np.array([np.dot(vecs[i], vector) for i in range(5)])
-        # print(f'my {self.my_pca.shape}')
         XPCAreduced = self.pca_transform.fit_transform(np.transpose(self.__vector))
         self.__vector = XPCAreduced.transpose()
-       
-
-
-        # vector = []
-        #
-        # for i in self.__vector:
-        #     x = np.arange(0, len(i) / self.__new_freq, 1 / self.__new_freq)
-        #     # print(f'len - x = {len(x)}')
-        #     # print(f'len - y = {len(i)}')
-        #     X = np.vstack((x, i))
-        #     XPCAreduced = self.pca_transform.fit_transform(np.transpose(X))
-        #     points_after_pca = [j[0] for j in XPCAreduced]
-        #     # print(len(points_after_pca))
-        #     # plt.plot(x, points_after_pca)
-        #     # plt.show()
 
     def find_signals_peaks(self):
         all_beats = []
