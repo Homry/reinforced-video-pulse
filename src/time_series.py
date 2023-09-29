@@ -4,22 +4,22 @@ from scipy import signal
 import statistics
 from matplotlib import pyplot as plt
 from sklearn.decomposition import PCA
-from scipy.signal import find_peaks
+from scipy.signal import find_peaks, savgol_filter
 from scipy.fftpack import fft, ifft, fftfreq, fftshift
 
 
 class TimeSeries:
-    def __init__(self):
+    def __init__(self, debug=False):
         self.__vector = None
         self.__old_freq = 30
         self.__new_freq = 250
-        self.pca_transform = PCA(n_components=5)
+        self.pca_transform = PCA(n_components=4)
+        self.debug = debug
 
     def init_vector(self, vector):
         self.__vector = [[i[1]] for i in vector]
 
     def add_in_vector(self, vector, status=None):
-        # [self.__vector[i].append(vector[i][0][1]) for i, j in enumerate(status) if j == 1]
         [self.__vector[i].append(vector[i][1]) for i, j in enumerate(vector)]
 
     def __str__(self):
@@ -66,7 +66,6 @@ class TimeSeries:
                 vector.append(i)
         self.__vector = vector
 
-
     def butter_filter(self):
         passband_freq = [0.75, 5]
         order = 5
@@ -79,38 +78,67 @@ class TimeSeries:
             vector.append(signal.lfilter(b, a, i))
         self.__vector = vector
 
-    def pca(self):
-        XPCAreduced = self.pca_transform.fit_transform(np.transpose(self.__vector))
-        self.__vector = XPCAreduced.transpose()
+    def slice_vector(self, window):
+        window_begin = 0
+        window_end = self.__new_freq*window
+        window_offset = (self.__new_freq // 2)*window
+        end_of_data = len(self.__vector[0])
+        result = []
+        while window_end <= end_of_data:
+            data = []
+            for signal_ in self.__vector:
+                data.append(signal_[window_begin:window_end])
+            window_begin += window_offset
+            window_end += window_offset
+            result.append(data)
+        else:
+            data = []
+            for signal_ in self.__vector:
+                data.append(signal_[window_begin:end_of_data])
+            result.append(data)
+        return result
 
-    def find_signals_peaks(self):
+    def pca(self, data):
+        XPCA_reduced = self.pca_transform.fit_transform(np.transpose(data))
+        return XPCA_reduced.transpose()
+
+    @staticmethod
+    def polynomial_smoothing(data, window_size=40, polynomial_order=4):
+        smoothed_data = []
+        for signal_ in data:
+            # smoothed_data.append(savgol_filter(signal_, window_size, polynomial_order))
+            smoothed_data.append(np.convolve(signal_, np.ones(window_size)/window_size, mode='same'))
+        return smoothed_data
+
+    def find_signals_peaks(self, vector, debug_vector=None):
         all_beats = []
         freq_ = []
         per = []
-        for i, signal in enumerate(self.__vector):
-            x = np.arange(0, len(signal) / self.__new_freq, 1 / self.__new_freq)
-            peaks, _ = find_peaks(signal)
+        for i, signal_ in enumerate(vector):
+            x = np.arange(0, len(signal_) / self.__new_freq, 1 / self.__new_freq)
+            peaks, _ = find_peaks(signal_)
             f = plt.figure(i)
-            # plt.plot(x, signal, label=f'{i}', color='red')
-            plt.plot(x,signal)
-            # plt.plot(x[peaks], signal[peaks], "o", color='red')
-            # plt.plot(x[peaks], signal[peaks], "o", color='red')
-
-            heart_beat = len(peaks) / (len(signal) / self.__new_freq) * 60
+            heart_beat = len(peaks) / (len(signal_) / self.__new_freq) * 60
             all_beats.append(heart_beat)
+            print("beat", heart_beat)
 
-            N = len(signal)
+            plt.plot(x, debug_vector[i], color='red', label='original')
+            plt.plot(x[peaks], signal_[peaks], "o", color='orange', label='peaks')
+            plt.plot(x, signal_, label='smooth')
+            plt.legend()
+
+            N = len(signal_)
             # sample spacing
-            T = 1.0 / 250
+            T = 1.0 / self.__new_freq
 
             # Get fft
-            spectrum = np.abs(fft(signal))
+            spectrum = np.abs(fft(signal_))
             spectrum *= spectrum
             xf = fftfreq(N, T)
 
             # Get maximum ffts index from second half
-            # maxInd = np.argmax(spectrum[:int(len(spectrum)/2)+1])
-            maxInd = np.argmax(spectrum)
+            maxInd = np.argmax(spectrum[:int(len(spectrum)/2)+1])
+            # maxInd = np.argmax(spectrum)
             maxFreqPow = spectrum[maxInd]
             maxFreq = np.abs(xf[maxInd])
 
@@ -121,25 +149,10 @@ class TimeSeries:
             per.append(percentage)
             print(f' maxFreq = {maxFreq}, percentage = {percentage}, bpm = {60*maxFreq}')
 
-            print("beat", heart_beat)
-        print(f'average = {sum(all_beats) / len(all_beats)}')
+            # print("beat", heart_beat)
+        # print(f'average = {sum(all_beats) / len(all_beats)}')
         idx = np.argmax(per)
         print(f'bpm = {60*freq_[idx]}')
         plt.show()
-
-        # for i, signal in enumerate(self.my_pca):
-        #     x = np.arange(0, len(signal) / self.__new_freq, 1 / self.__new_freq)
-        #     peaks, _ = find_peaks(signal)
-        #     f = plt.figure(i)
-        #     plt.plot(x, signal, label=f'{i}')
-        #
-        #     plt.plot(x[peaks], signal[peaks], "o", color='red')
-        #
-        #
-        #     heart_beat = len(peaks) / (len(signal) / self.__new_freq) * 60
-        #     all_beats.append(heart_beat)
-        #     print("beat", heart_beat)
-        # print(f'average = {sum(all_beats) / len(all_beats)}')
-        # plt.show()
 
 
