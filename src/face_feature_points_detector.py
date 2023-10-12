@@ -1,6 +1,7 @@
 import time
 
 import cv2
+import tqdm
 import numpy as np
 from src import VideoReader, MediapipeDetector, LucasKanadeTracker, FaceDetector, TimeSeries
 
@@ -15,6 +16,10 @@ class FaceFeaturePointsDetector:
         self.face_detector = FaceDetector(debug)
         self.points_use_vector = []
         self.debug = debug
+        self.counter = 0
+        self.prev_points = []
+        self.prev_image = None
+        self.init_lk = True
 
     def init_detector(self):
         image = self.video.read_frame()
@@ -23,13 +28,23 @@ class FaceFeaturePointsDetector:
         self.time_series.init_vector(points)
 
     def process_video(self):
-        while self.video.current_frame != self.video.total_frames:
+        for _ in tqdm.tqdm(range(1, self.video.total_frames)):
             image = self.video.read_frame()
             borders, new_image = self.face_detector.find_face(image)
 
             if new_image is None:
                 continue
-            points = np.array(self.mediapipe.get_coords_from_face(image, borders))
+            if self.counter % 150 == 0:
+
+                points = np.array(self.mediapipe.get_coords_from_face(image, borders))
+                self.prev_points = points
+                self.prev_image = new_image.copy()
+                self.init_lk = True
+            else:
+                if self.init_lk is True:
+                    self.init_lk = False
+                    self.lukas_kanade.init_points(self.prev_points, self.prev_image)
+                points = self.lukas_kanade.detect(new_image.copy())
             if self.debug:
                 crop_image = new_image.copy()
                 for i in points:
@@ -39,4 +54,5 @@ class FaceFeaturePointsDetector:
                     break
             # self.time_series.add_in_vector(points, status)
             self.time_series.add_in_vector(points)
+            self.counter += 1
         # self.time_series.filter_by_len()

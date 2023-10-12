@@ -14,7 +14,7 @@ class LucasKanadeTracker:
                                                             dtype=np.float32), None, **self.__lk_params)
         self.__old_gray_frame = gray.copy()
         self.__lk_points = update_points
-        return update_points, status
+        return update_points
 
     def init_points(self, points, image):
         self.__lk_points = points

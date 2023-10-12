@@ -2,19 +2,23 @@ import numpy as np
 import scipy.interpolate as interp
 from scipy import signal
 import statistics
+from itertools import zip_longest
+from scipy.stats import pearsonr
 from matplotlib import pyplot as plt
 from sklearn.decomposition import PCA
 from scipy.signal import find_peaks, savgol_filter
 from scipy.fftpack import fft, ifft, fftfreq, fftshift
 
+number = 0
 
 class TimeSeries:
     def __init__(self, debug=False):
         self.__vector = None
         self.__old_freq = 30
         self.__new_freq = 250
-        self.pca_transform = PCA(n_components=4)
+        self.pca_transform = PCA(n_components=5)
         self.debug = debug
+        self.used_signal = []
 
     def init_vector(self, vector):
         self.__vector = [[i[1]] for i in vector]
@@ -34,6 +38,7 @@ class TimeSeries:
             x_int = np.linspace(np.min(x), np.max(x), int(len(x) * 8.333))
             cs = interp.CubicSpline(x, i)
             vector.append(cs(x_int))
+        print(len(vector[0]))
         self.__vector = vector
         # for i, j in enumerate(self.__vector):
         #     x = np.arange(0, len(j) / self.__new_freq, 1 / self.__new_freq)
@@ -84,8 +89,11 @@ class TimeSeries:
         window_offset = (self.__new_freq // 2)*window
         end_of_data = len(self.__vector[0])
         result = []
+        no_else = False
         while window_end <= end_of_data:
             data = []
+            if window_end == end_of_data:
+                no_else = True
             for signal_ in self.__vector:
                 data.append(signal_[window_begin:window_end])
             window_begin += window_offset
@@ -93,9 +101,12 @@ class TimeSeries:
             result.append(data)
         else:
             data = []
-            for signal_ in self.__vector:
-                data.append(signal_[window_begin:end_of_data])
-            result.append(data)
+            if window_begin < end_of_data and not no_else:
+                for signal_ in self.__vector:
+                    data.append(signal_[window_begin:end_of_data])
+                result.append(data)
+        for i in result:
+            print(len(i[0]))
         return result
 
     def pca(self, data):
@@ -111,13 +122,22 @@ class TimeSeries:
         return smoothed_data
 
     def find_signals_peaks(self, vector, debug_vector=None):
+        global number
         all_beats = []
         freq_ = []
         per = []
+        max_per = -np.inf
+        max_per_num = 0
         for i, signal_ in enumerate(vector):
             x = np.arange(0, len(signal_) / self.__new_freq, 1 / self.__new_freq)
             peaks, _ = find_peaks(signal_)
-            f = plt.figure(i)
+
+
+
+            f = plt.figure(f'{number}_{i}')
+            std = np.std(signal_)
+            plt.axhline(y=3*std, color='black', linestyle='-', linewidth=2, label='+2std')
+            plt.axhline(y=-3 * std, color='black', linestyle='-', linewidth=2, label='-2std')
             heart_beat = len(peaks) / (len(signal_) / self.__new_freq) * 60
             all_beats.append(heart_beat)
             print("beat", heart_beat)
@@ -145,14 +165,94 @@ class TimeSeries:
             total_power = np.sum(spectrum)
             # Get max frequencies power percentage in total power
             percentage = maxFreqPow / total_power
+
+
+            # if max(signal_) < 3 * std and abs(min(signal_)) < 3 * std:
+            if percentage > max_per:
+                max_per = percentage
+                max_per_num = i
             freq_.append(maxFreq)
             per.append(percentage)
             print(f' maxFreq = {maxFreq}, percentage = {percentage}, bpm = {60*maxFreq}')
 
             # print("beat", heart_beat)
         # print(f'average = {sum(all_beats) / len(all_beats)}')
+        self.used_signal.append(self.find_most_periodic_signal(vector))
         idx = np.argmax(per)
         print(f'bpm = {60*freq_[idx]}')
+        number += 1
+
+    def find_most_periodic_signal(self, signals):
+        max_periodicity = -1  # Начальное значение максимальной периодичности
+        most_periodic_signal = None  # Начальное значение наиболее периодичного сигнала
+
+        for signal in signals:
+            spectrum = np.fft.fft(signal)
+            amplitudes = np.abs(spectrum)
+            max_power_frequency = np.argmax(amplitudes)
+            if max_power_frequency * 2 < len(amplitudes):
+                first_harmonic_frequency = 2 * max_power_frequency
+            else:
+                first_harmonic_frequency = max_power_frequency
+            total_power = np.sum(amplitudes)
+            print(len(amplitudes), max_power_frequency, first_harmonic_frequency)
+            power_explained = amplitudes[max_power_frequency] + amplitudes[first_harmonic_frequency]
+            periodicity = (power_explained / total_power) * 100
+            print(f'period = {periodicity}')
+            if periodicity > max_periodicity:
+                max_periodicity = periodicity
+                most_periodic_signal = signal
+
+        return most_periodic_signal
+
+    def plot(self):
         plt.show()
+
+    def create_pulse_wave(self, window):
+        window_begin = 0
+        window_end = 250 * window
+
+        wave = list(self.used_signal[0][0:window_end // 2])
+        for i in range(len(self.used_signal) - 1):
+            begin = self.used_signal[i][window_end // 2:window_end]
+            end = self.used_signal[i][0:window_end // 2]
+            correlation_coefficient, _ = pearsonr(begin, end)
+            alpha = abs(correlation_coefficient)
+            for a, b in zip_longest(begin, end):
+                if b is not None:
+                    wave.append(alpha * b + (1 - alpha) * a)
+                else:
+                    wave.append(a)
+
+        if len(self.used_signal[-1]) > window_end // 2:
+            for i in self.used_signal[-1][window_end // 2:window_end]:
+                wave.append(i)
+        x = np.arange(0, len(wave) / self.__new_freq, 1 / self.__new_freq)
+        f = plt.figure(f'res')
+        plt.plot(x, wave)
+
+        N = len(wave)
+        # sample spacing
+        T = 1.0 / self.__new_freq
+
+        # Get fft
+        spectrum = np.abs(fft(wave))
+        spectrum *= spectrum
+        xf = fftfreq(N, T)
+
+        # Get maximum ffts index from second half
+        maxInd = np.argmax(spectrum[:int(len(spectrum) / 2) + 1])
+        # maxInd = np.argmax(spectrum)
+        maxFreqPow = spectrum[maxInd]
+        maxFreq = np.abs(xf[maxInd])
+
+        total_power = np.sum(spectrum)
+        # Get max frequencies power percentage in total power
+        percentage = maxFreqPow / total_power
+        peaks, _ = find_peaks(wave)
+        heart_beat = len(peaks) / (len(wave) / self.__new_freq) * 60
+        print(heart_beat)
+        print(f'bpm_wave = {60*maxFreq}')
+        print(f'test = {250*maxFreq}')
 
 
