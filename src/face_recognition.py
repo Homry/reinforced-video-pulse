@@ -45,6 +45,5 @@ class FaceDetector:
         if self.shape is not None:
             new_image = cv2.resize(new_image, (self.shape[1], self.shape[0]), interpolation = cv2.INTER_AREA)
         self.shape = new_image.shape
-
         return (rect_up_start, rect_up_end, rect_down_start, rect_down_end), new_image
 

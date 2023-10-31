@@ -6,7 +6,7 @@ from src import FaceFeaturePointsDetector, TimeSeries
 if __name__ == '__main__':
     time_ = time.time()
     time_series = TimeSeries(debug=False)
-    face = FaceFeaturePointsDetector('./videos/out2_amp5.mp4', time_series, debug=False)
+    face = FaceFeaturePointsDetector('./videos/Untitled Project 3.mov', time_series, debug=True)
     face.init_detector()
     face.process_video()
     # time_series.distance_filter()

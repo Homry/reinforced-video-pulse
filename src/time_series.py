@@ -6,7 +6,7 @@ from itertools import zip_longest
 from scipy.stats import pearsonr
 from matplotlib import pyplot as plt
 from sklearn.decomposition import PCA
-from scipy.signal import find_peaks, savgol_filter
+from scipy.signal import find_peaks, savgol_filter, peak_prominences
 from scipy.fftpack import fft, ifft, fftfreq, fftshift
 
 number = 0
@@ -115,13 +115,15 @@ class TimeSeries:
 
     @staticmethod
     def polynomial_smoothing(data, window_size=40, polynomial_order=4):
+        if len(data.shape) == 1:
+            return np.convolve(data, np.ones(window_size)/window_size, mode='same')
         smoothed_data = []
         for signal_ in data:
             # smoothed_data.append(savgol_filter(signal_, window_size, polynomial_order))
             smoothed_data.append(np.convolve(signal_, np.ones(window_size)/window_size, mode='same'))
         return smoothed_data
 
-    def find_signals_peaks(self, vector, debug_vector=None):
+    def find_signals_peaks(self, vector, debug_vector=None, ):
         global number
         all_beats = []
         freq_ = []
@@ -166,18 +168,18 @@ class TimeSeries:
             # Get max frequencies power percentage in total power
             percentage = maxFreqPow / total_power
 
-
-            # if max(signal_) < 3 * std and abs(min(signal_)) < 3 * std:
-            if percentage > max_per:
-                max_per = percentage
-                max_per_num = i
+            max_per_num = None
+            if max(signal_) < 3 * std and abs(min(signal_)) < 3 * std:
+                if percentage > max_per:
+                    max_per = percentage
+                    max_per_num = i
             freq_.append(maxFreq)
             per.append(percentage)
             print(f' maxFreq = {maxFreq}, percentage = {percentage}, bpm = {60*maxFreq}')
 
             # print("beat", heart_beat)
         # print(f'average = {sum(all_beats) / len(all_beats)}')
-        self.used_signal.append(self.find_most_periodic_signal(vector))
+        self.used_signal.append(vector[max_per_num] if max_per_num is not None else vector[3])
         idx = np.argmax(per)
         print(f'bpm = {60*freq_[idx]}')
         number += 1
@@ -228,31 +230,47 @@ class TimeSeries:
             for i in self.used_signal[-1][window_end // 2:window_end]:
                 wave.append(i)
         x = np.arange(0, len(wave) / self.__new_freq, 1 / self.__new_freq)
+        wave = self.polynomial_smoothing(np.array(wave))
         f = plt.figure(f'res')
         plt.plot(x, wave)
 
-        N = len(wave)
-        # sample spacing
-        T = 1.0 / self.__new_freq
-
-        # Get fft
-        spectrum = np.abs(fft(wave))
-        spectrum *= spectrum
-        xf = fftfreq(N, T)
-
-        # Get maximum ffts index from second half
-        maxInd = np.argmax(spectrum[:int(len(spectrum) / 2) + 1])
-        # maxInd = np.argmax(spectrum)
-        maxFreqPow = spectrum[maxInd]
-        maxFreq = np.abs(xf[maxInd])
-
-        total_power = np.sum(spectrum)
-        # Get max frequencies power percentage in total power
-        percentage = maxFreqPow / total_power
+        # N = len(wave)
+        # # sample spacing
+        # T = 1.0 / self.__new_freq
+        #
+        # # Get fft
+        # spectrum = np.abs(fft(wave))
+        # spectrum *= spectrum
+        # xf = fftfreq(N, T)
+        #
+        # # Get maximum ffts index from second half
+        # maxInd = np.argmax(spectrum[:int(len(spectrum) / 2) + 1])
+        # # maxInd = np.argmax(spectrum)
+        # maxFreqPow = spectrum[maxInd]
+        # maxFreq = np.abs(xf[maxInd])
+        #
+        # total_power = np.sum(spectrum)
+        # # Get max frequencies power percentage in total power
+        # percentage = maxFreqPow / total_power
         peaks, _ = find_peaks(wave)
+        wave = np.array(wave)
+
+        prominences = peak_prominences(wave, peaks)[0]
+        contour_heights = wave[peaks] - prominences
+        plt.vlines(x=x[peaks], ymin=contour_heights, ymax=wave[peaks], color='red')
+        peaks = peaks[prominences > 0.35*np.std(prominences)]
+        prominences = peak_prominences(wave, peaks)[0]
+        contour_heights = wave[peaks] - prominences
+        print(peaks)
+        plt.plot(x[peaks], wave[peaks], "o", color='orange', label='peaks')
+
+        with open('./npy_data/orig_lk.npy', 'wb') as f:
+            np.save(f, x[peaks])
+
+        plt.vlines(x=x[peaks], ymin=contour_heights, ymax=wave[peaks], color='orange')
         heart_beat = len(peaks) / (len(wave) / self.__new_freq) * 60
         print(heart_beat)
-        print(f'bpm_wave = {60*maxFreq}')
-        print(f'test = {250*maxFreq}')
+        # print(f'bpm_wave = {60*maxFreq}')
+        # print(f'test = {250*maxFreq}')
 
 

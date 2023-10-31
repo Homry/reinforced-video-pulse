@@ -3,7 +3,7 @@ import time
 import cv2
 import tqdm
 import numpy as np
-from src import VideoReader, MediapipeDetector, LucasKanadeTracker, FaceDetector, TimeSeries
+from src import VideoReader, MediapipeDetector, LucasKanadeTracker, FaceDetector, TimeSeries, WebCam
 
 
 class FaceFeaturePointsDetector:
@@ -45,6 +45,7 @@ class FaceFeaturePointsDetector:
                     self.init_lk = False
                     self.lukas_kanade.init_points(self.prev_points, self.prev_image)
                 points = self.lukas_kanade.detect(new_image.copy())
+                # points = np.array(self.mediapipe.get_coords_from_face(image, borders))
             if self.debug:
                 crop_image = new_image.copy()
                 for i in points:
