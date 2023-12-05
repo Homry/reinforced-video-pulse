@@ -2,13 +2,15 @@ import numpy as np
 import scipy.interpolate as interp
 from scipy import signal
 import statistics
+from src import pipeline
 from itertools import zip_longest
+from scipy.integrate import simpson, trapz
 from scipy.stats import pearsonr
 from matplotlib import pyplot as plt
 from sklearn.decomposition import PCA
 from scipy.signal import find_peaks, savgol_filter, peak_prominences
-from scipy.fftpack import fft, ifft, fftfreq, fftshift
-
+from scipy.fftpack import rfft, ifft, rfftfreq, fftshift
+import os
 number = 0
 
 class TimeSeries:
@@ -38,7 +40,6 @@ class TimeSeries:
             x_int = np.linspace(np.min(x), np.max(x), int(len(x) * 8.333))
             cs = interp.CubicSpline(x, i)
             vector.append(cs(x_int))
-        print(len(vector[0]))
         self.__vector = vector
         # for i, j in enumerate(self.__vector):
         #     x = np.arange(0, len(j) / self.__new_freq, 1 / self.__new_freq)
@@ -105,8 +106,6 @@ class TimeSeries:
                 for signal_ in self.__vector:
                     data.append(signal_[window_begin:end_of_data])
                 result.append(data)
-        for i in result:
-            print(len(i[0]))
         return result
 
     def pca(self, data):
@@ -142,7 +141,6 @@ class TimeSeries:
             plt.axhline(y=-3 * std, color='black', linestyle='-', linewidth=2, label='-2std')
             heart_beat = len(peaks) / (len(signal_) / self.__new_freq) * 60
             all_beats.append(heart_beat)
-            print("beat", heart_beat)
 
             plt.plot(x, debug_vector[i], color='red', label='original')
             plt.plot(x[peaks], signal_[peaks], "o", color='orange', label='peaks')
@@ -175,13 +173,13 @@ class TimeSeries:
                     max_per_num = i
             freq_.append(maxFreq)
             per.append(percentage)
-            print(f' maxFreq = {maxFreq}, percentage = {percentage}, bpm = {60*maxFreq}')
+            # print(f' maxFreq = {maxFreq}, percentage = {percentage}, bpm = {60*maxFreq}')
 
             # print("beat", heart_beat)
         # print(f'average = {sum(all_beats) / len(all_beats)}')
         self.used_signal.append(vector[max_per_num] if max_per_num is not None else vector[3])
         idx = np.argmax(per)
-        print(f'bpm = {60*freq_[idx]}')
+        # print(f'bpm = {60*freq_[idx]}')
         number += 1
 
     def find_most_periodic_signal(self, signals):
@@ -197,10 +195,8 @@ class TimeSeries:
             else:
                 first_harmonic_frequency = max_power_frequency
             total_power = np.sum(amplitudes)
-            print(len(amplitudes), max_power_frequency, first_harmonic_frequency)
             power_explained = amplitudes[max_power_frequency] + amplitudes[first_harmonic_frequency]
             periodicity = (power_explained / total_power) * 100
-            print(f'period = {periodicity}')
             if periodicity > max_periodicity:
                 max_periodicity = periodicity
                 most_periodic_signal = signal
@@ -210,7 +206,7 @@ class TimeSeries:
     def plot(self):
         plt.show()
 
-    def create_pulse_wave(self, window):
+    def create_pulse_wave(self, vector, window, dir, file_name):
         window_begin = 0
         window_end = 250 * window
 
@@ -261,16 +257,41 @@ class TimeSeries:
         peaks = peaks[prominences > 0.35*np.std(prominences)]
         prominences = peak_prominences(wave, peaks)[0]
         contour_heights = wave[peaks] - prominences
-        print(peaks)
-        plt.plot(x[peaks], wave[peaks], "o", color='orange', label='peaks')
 
-        with open('./npy_data/orig_lk.npy', 'wb') as f:
+        plt.plot(x[peaks], wave[peaks], "o", color='orange', label='peaks')
+        if not os.path.exists(dir):
+            os.mkdir(dir)
+        with open(f'{dir}/{file_name}.npy', 'wb') as f:
             np.save(f, x[peaks])
 
         plt.vlines(x=x[peaks], ymin=contour_heights, ymax=wave[peaks], color='orange')
         heart_beat = len(peaks) / (len(wave) / self.__new_freq) * 60
-        print(heart_beat)
         # print(f'bpm_wave = {60*maxFreq}')
         # print(f'test = {250*maxFreq}')
+
+
+    def correlation_after_pca(self, vector, dir, file_name):
+        rate = 250
+        pipeline(vector, self.__new_freq)
+        for i in range(len(vector)):
+            wave = vector[i]
+            x = np.arange(0, len(wave) / self.__new_freq, 1 / self.__new_freq)
+
+
+            N = rate*10-1
+            yf = rfft(wave)
+            xf = rfftfreq(N, 1/rate)
+
+            wave = self.polynomial_smoothing(np.array(wave))
+            peaks, _ = find_peaks(wave)
+            wave = np.array(wave)
+
+            prominences = peak_prominences(wave, peaks)[0]
+            contour_heights = wave[peaks] - prominences
+
+            peaks = peaks[prominences > 0.35 * np.std(prominences)]
+            # print('peaks', len(peaks))
+
+
 
 

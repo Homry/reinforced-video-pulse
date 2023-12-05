@@ -3,3 +3,6 @@ opencv-python
 mediapipe
 scipy
 pandas
+tqdm
+scikit-learn
+pandas

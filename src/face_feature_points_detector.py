@@ -3,12 +3,14 @@ import time
 import cv2
 import tqdm
 import numpy as np
-from src import VideoReader, MediapipeDetector, LucasKanadeTracker, FaceDetector, TimeSeries, WebCam
+from src import VideoReader, MediapipeDetector, LucasKanadeTracker, FaceDetector, TimeSeries, WebCam, VideoSkipParser
 
 
 class FaceFeaturePointsDetector:
-    def __init__(self, path, time_series: TimeSeries, debug: bool = True):
-        self.video = VideoReader(path)
+    def __init__(self, path, time_series: TimeSeries, debug: bool = True, handler='media', time_=0):
+        self.handler = handler
+        self.video = VideoSkipParser(path, time_)
+        # self.video = VideoReader(path)
         self.video.open()
         self.time_series = time_series
         self.mediapipe = MediapipeDetector()
@@ -41,11 +43,14 @@ class FaceFeaturePointsDetector:
                 self.prev_image = new_image.copy()
                 self.init_lk = True
             else:
-                if self.init_lk is True:
-                    self.init_lk = False
-                    self.lukas_kanade.init_points(self.prev_points, self.prev_image)
-                points = self.lukas_kanade.detect(new_image.copy())
-                # points = np.array(self.mediapipe.get_coords_from_face(image, borders))
+                if self.handler == 'media':
+                    points = np.array(self.mediapipe.get_coords_from_face(image, borders))
+                else:
+                    if self.init_lk is True:
+                        self.init_lk = False
+                        self.lukas_kanade.init_points(self.prev_points, self.prev_image)
+                    points = self.lukas_kanade.detect(new_image.copy())
+                #
             if self.debug:
                 crop_image = new_image.copy()
                 for i in points:
