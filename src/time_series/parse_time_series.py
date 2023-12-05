@@ -40,7 +40,7 @@ class ParseTimeSeries(TimeSeries):
             self.__save_data(pca_data)
             self.__current_item = self.__current_item // 2
             window_offset = 5
-            self._vector = current_data[150::]
+            self._vector = [i[150::] for i in current_data]
         else:
             self.__current_item = 0
             window_offset = 10

@@ -1,8 +1,9 @@
 from .IFuture import IFuture
 import numpy as np
 from tqdm import tqdm
+import cv2
 from src import VideoReader, FaceDetector, ParseTimeSeries, MediapipeDetector
-
+import traceback
 
 class FutureParseDetector(IFuture):
     def __init__(self, file_path: str, tracker=MediapipeDetector, video_tracker: VideoReader = VideoReader,
@@ -26,3 +27,5 @@ class FutureParseDetector(IFuture):
                 self.time_series.add_in_vector(points)
             except Exception as e:
                 self.time_series.set_status()
+                print(e)
+                traceback.print_exc()
