@@ -1,7 +1,18 @@
 import cv2
 
+
 class VideoReader:
     def __init__(self, file_path):
+        self.file_path = file_path
+        self.video_capture = None
+        self.frame_width = None
+        self.frame_height = None
+        self.frame_rate = None
+        self.total_frames = None
+        self.current_frame = 0
+        self.update(file_path)
+
+    def update(self, file_path):
         self.file_path = file_path
         self.video_capture = None
         self.frame_width = None
