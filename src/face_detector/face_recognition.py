@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-# from src import VideoReader, MediapipeDetector, LucasKanadeTracker
 
 
 class FaceDetector:

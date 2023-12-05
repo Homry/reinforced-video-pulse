@@ -1,5 +1,5 @@
 import cv2
-from src import VideoReader
+from .video_parser import VideoReader
 
 
 class VideoSkipParser(VideoReader):

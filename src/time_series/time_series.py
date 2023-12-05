@@ -2,7 +2,7 @@ import numpy as np
 import scipy.interpolate as interp
 from scipy import signal
 import statistics
-from src import pipeline
+# from src import pipeline
 from itertools import zip_longest
 from scipy.integrate import simpson, trapz
 from scipy.stats import pearsonr
@@ -15,39 +15,39 @@ number = 0
 
 class TimeSeries:
     def __init__(self, debug=False):
-        self.__vector = None
-        self.__old_freq = 30
-        self.__new_freq = 250
+        self._vector = None
+        self._old_freq = 30
+        self._new_freq = 250
         self.pca_transform = PCA(n_components=5)
         self.debug = debug
         self.used_signal = []
 
     def init_vector(self, vector):
-        self.__vector = [[i[1]] for i in vector]
+        self._vector = [[i[1]] for i in vector]
 
     def add_in_vector(self, vector, status=None):
-        [self.__vector[i].append(vector[i][1]) for i, j in enumerate(vector)]
+        [self._vector[i].append(vector[i][1]) for i, j in enumerate(vector)]
 
     def __str__(self):
-        return f'{self.__vector}, {len(self.__vector[0])}'
+        return f'{self._vector}, {len(self._vector[0])}'
 
     def interpolate_signal(self):
         vector = []
-        for i in self.__vector:
-            x = np.arange(0, len(i) / self.__old_freq, 1 / self.__old_freq)
+        for i in self._vector:
+            x = np.arange(0, len(i) / self._old_freq, 1 / self._old_freq)
             if len(x) > len(i):
                 x = np.delete(x, -1)
             x_int = np.linspace(np.min(x), np.max(x), int(len(x) * 8.333))
             cs = interp.CubicSpline(x, i)
             vector.append(cs(x_int))
-        self.__vector = vector
+        self._vector = vector
         # for i, j in enumerate(self.__vector):
         #     x = np.arange(0, len(j) / self.__new_freq, 1 / self.__new_freq)
         #     plt.plot(x, j)
         #     plt.show()
 
     def filter_by_len(self):
-        len_vector = [len(i) for i in self.__vector]
+        len_vector = [len(i) for i in self._vector]
         uniq_len = list(set(len_vector))
         count_of_len = {i: [] for i in uniq_len}
         list(map(lambda x: count_of_len[x].append(1), len_vector))
@@ -58,44 +58,44 @@ class TimeSeries:
             if item > max_item:
                 max_key, max_item = key, item
 
-        self.__vector = [i for i in self.__vector if len(i) == max_key]
+        self._vector = [i for i in self._vector if len(i) == max_key]
 
 
     def distance_filter(self):
         vector = []
 
-        for i in self.__vector:
+        for i in self._vector:
             distance = [abs(i[j] - i[j + 1]) for j in range(len(i) - 1)]
             mode = statistics.median(distance)
             status = [True if j <= mode else False for j in distance]
             if False not in status:
                 vector.append(i)
-        self.__vector = vector
+        self._vector = vector
 
     def butter_filter(self):
         passband_freq = [0.75, 5]
         order = 5
-        nyquist_freq = 0.5 * self.__new_freq
+        nyquist_freq = 0.5 * self._new_freq
         normalized_passband = [freq / nyquist_freq for freq in passband_freq]
         b, a = signal.butter(order, normalized_passband, btype='band', analog=False, output='ba')
 
         vector = []
-        for i in self.__vector:
+        for i in self._vector:
             vector.append(signal.lfilter(b, a, i))
-        self.__vector = vector
+        self._vector = vector
 
     def slice_vector(self, window):
         window_begin = 0
-        window_end = self.__new_freq*window
-        window_offset = (self.__new_freq // 2)*window
-        end_of_data = len(self.__vector[0])
+        window_end = self._new_freq * window
+        window_offset = (self._new_freq // 2) * window
+        end_of_data = len(self._vector[0])
         result = []
         no_else = False
         while window_end <= end_of_data:
             data = []
             if window_end == end_of_data:
                 no_else = True
-            for signal_ in self.__vector:
+            for signal_ in self._vector:
                 data.append(signal_[window_begin:window_end])
             window_begin += window_offset
             window_end += window_offset
@@ -103,7 +103,7 @@ class TimeSeries:
         else:
             data = []
             if window_begin < end_of_data and not no_else:
-                for signal_ in self.__vector:
+                for signal_ in self._vector:
                     data.append(signal_[window_begin:end_of_data])
                 result.append(data)
         return result
@@ -130,7 +130,7 @@ class TimeSeries:
         max_per = -np.inf
         max_per_num = 0
         for i, signal_ in enumerate(vector):
-            x = np.arange(0, len(signal_) / self.__new_freq, 1 / self.__new_freq)
+            x = np.arange(0, len(signal_) / self._new_freq, 1 / self._new_freq)
             peaks, _ = find_peaks(signal_)
 
 
@@ -139,7 +139,7 @@ class TimeSeries:
             std = np.std(signal_)
             plt.axhline(y=3*std, color='black', linestyle='-', linewidth=2, label='+2std')
             plt.axhline(y=-3 * std, color='black', linestyle='-', linewidth=2, label='-2std')
-            heart_beat = len(peaks) / (len(signal_) / self.__new_freq) * 60
+            heart_beat = len(peaks) / (len(signal_) / self._new_freq) * 60
             all_beats.append(heart_beat)
 
             plt.plot(x, debug_vector[i], color='red', label='original')
@@ -149,7 +149,7 @@ class TimeSeries:
 
             N = len(signal_)
             # sample spacing
-            T = 1.0 / self.__new_freq
+            T = 1.0 / self._new_freq
 
             # Get fft
             spectrum = np.abs(fft(signal_))
@@ -225,7 +225,7 @@ class TimeSeries:
         if len(self.used_signal[-1]) > window_end // 2:
             for i in self.used_signal[-1][window_end // 2:window_end]:
                 wave.append(i)
-        x = np.arange(0, len(wave) / self.__new_freq, 1 / self.__new_freq)
+        x = np.arange(0, len(wave) / self._new_freq, 1 / self._new_freq)
         wave = self.polynomial_smoothing(np.array(wave))
         f = plt.figure(f'res')
         plt.plot(x, wave)
@@ -265,17 +265,17 @@ class TimeSeries:
             np.save(f, x[peaks])
 
         plt.vlines(x=x[peaks], ymin=contour_heights, ymax=wave[peaks], color='orange')
-        heart_beat = len(peaks) / (len(wave) / self.__new_freq) * 60
+        heart_beat = len(peaks) / (len(wave) / self._new_freq) * 60
         # print(f'bpm_wave = {60*maxFreq}')
         # print(f'test = {250*maxFreq}')
 
 
     def correlation_after_pca(self, vector, dir, file_name):
         rate = 250
-        pipeline(vector, self.__new_freq)
+        # pipeline(vector, self._new_freq)
         for i in range(len(vector)):
             wave = vector[i]
-            x = np.arange(0, len(wave) / self.__new_freq, 1 / self.__new_freq)
+            x = np.arange(0, len(wave) / self._new_freq, 1 / self._new_freq)
 
 
             N = rate*10-1

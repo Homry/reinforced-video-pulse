@@ -3,7 +3,7 @@ import time
 import cv2
 import tqdm
 import numpy as np
-from src import VideoReader, MediapipeDetector, LucasKanadeTracker, FaceDetector, TimeSeries, WebCam, VideoSkipParser
+from src import VideoReader, MediapipeDetector, LucasKanadeTracker, FaceDetector, TimeSeries
 
 
 class FaceFeaturePointsDetector:
