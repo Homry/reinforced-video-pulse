@@ -3,7 +3,7 @@ import numpy as np
 
 
 class FaceDetector:
-    def __init__(self, debug: bool = True):
+    def __init__(self, debug: bool = False):
         self.__face_cascade = cv2.CascadeClassifier("./data/haarcascade_frontalface_default.xml")
         self.shape = None
         self.prev_face = None
@@ -34,12 +34,13 @@ class FaceDetector:
         up_image = image[rect_up_start[1]: rect_up_end[1], rect_up_start[0]: rect_up_end[0]]
         down_image = image[rect_down_start[1]: rect_down_end[1], rect_down_start[0]: rect_down_end[0]]
 
-        if self.debug:
-            image = cv2.rectangle(image, rect_up_start, rect_up_end, (0, 255, 0), 1)
-            image = cv2.rectangle(image, rect_down_start, rect_down_end, (0, 255, 0), 1)
-            cv2.imshow('full_image', image)
-            if cv2.waitKey(1) & 0xFF == 27:
-                exit(1)
+        # if self.debug:
+        #     # cv2.imshow('image', image)
+        #     image = cv2.rectangle(image, rect_up_start, rect_up_end, (0, 255, 0), 1)
+        #     image = cv2.rectangle(image, rect_down_start, rect_down_end, (0, 255, 0), 1)
+        #     cv2.imshow('full_image', image)
+        #     if cv2.waitKey(1) & 0xFF == 27:
+        #         exit(1)
         new_image = np.concatenate((up_image, down_image), axis=0)
         if self.shape is not None:
             new_image = cv2.resize(new_image, (self.shape[1], self.shape[0]), interpolation = cv2.INTER_AREA)

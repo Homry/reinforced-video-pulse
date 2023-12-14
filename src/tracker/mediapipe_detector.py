@@ -57,6 +57,7 @@ class MediapipeDetector:
         return points
 
     def get_coords_from_face(self, image: np.array, borders: tuple) -> list:
+
         points = self.get_coords(image)
         return self.shift_points(np.array(points), borders)
 

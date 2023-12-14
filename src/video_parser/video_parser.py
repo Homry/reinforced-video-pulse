@@ -38,6 +38,7 @@ class VideoReader:
     def read_frame(self):
         ret, frame = self.video_capture.read()
         if not ret:
+
             return None
 
         self.current_frame += 1

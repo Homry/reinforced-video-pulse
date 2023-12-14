@@ -3,11 +3,13 @@ from .time_series import TimeSeries
 
 
 class ParseTimeSeries(TimeSeries):
-    def __init__(self, file_name: str, current_save_dir: str, debug: bool = False):
+    def __init__(self, file_name: str, current_save_dir: str, debug: bool = False, current_time=None):
         super().__init__(debug)
+        if current_time is None:
+            current_time = [0, 10]
         self.__current_save_dir = current_save_dir
         self.__current_file_name = file_name.split('/')[-1].split('.')[0]
-        self.__current_window = np.array([0, 10])
+        self.__current_window = np.array(current_time)
         self.__status = True
         self.__current_item = 0
 

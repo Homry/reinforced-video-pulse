@@ -20,7 +20,7 @@ if __name__ == '__main__':
         time_ = time.time()
         time_series = TimeSeries(debug=False)
         # face = FaceFeaturePointsDetector('./videos/2022-09-10 09-22-51.mp4', time_series, handler=i[0], debug=False, time_=i[1]* 60 * 30)
-        face = FaceFeaturePointsDetector('D:/датасет/room2115/video/2022-09-10 13-13-58.mp4', time_series, handler=i[0],
+        face = FaceFeaturePointsDetector('./videos/out2_amp5.mp4', time_series, handler=i[0],
                                          debug=False,
                                          time_=i[1] * 60 * 30)
         face.init_detector()

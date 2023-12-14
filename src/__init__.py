@@ -1,4 +1,4 @@
-from .video_parser import VideoReader, WebCam
+from .video_parser import VideoReader, WebCam, VideoSkipParser
 from .face_detector import FaceDetector
 from .time_series import ParseTimeSeries, TimeSeries
 from .tracker import LucasKanadeTracker, MediapipeDetector
