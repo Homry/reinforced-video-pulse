@@ -1,9 +1,11 @@
+import os.path
+
 import numpy as np
 from .time_series import TimeSeries
 
 
 class ParseTimeSeries(TimeSeries):
-    def __init__(self, file_name: str, current_save_dir: str, debug: bool = False, current_time=None):
+    def __init__(self, room: str, file_name: str, current_save_dir: str, debug: bool = False, current_time=None):
         super().__init__(debug)
         if current_time is None:
             current_time = [0, 10]
@@ -12,6 +14,7 @@ class ParseTimeSeries(TimeSeries):
         self.__current_window = np.array(current_time)
         self.__status = True
         self.__current_item = 0
+        self.__room = room
 
     def update(self, file_name: str):
         self.__current_file_name = file_name
@@ -51,6 +54,9 @@ class ParseTimeSeries(TimeSeries):
         self.__current_window = self.__current_window + window_offset
 
     def __save_data(self, data):
-        with open(f'{self.__current_save_dir}/{self.__current_file_name}_{self.__current_window[0]}-'
+        if not os.path.exists(f'{self.__current_save_dir}/{self.__room}/{self.__current_file_name}'):
+            os.mkdir(f'{self.__current_save_dir}/{self.__room}/{self.__current_file_name}')
+
+        with open(f'{self.__current_save_dir}/{self.__room}/{self.__current_file_name}/{self.__current_window[0]}-'
                   f'{self.__current_window[1]}.npy', 'wb') as f:
             np.save(f, np.array(data))

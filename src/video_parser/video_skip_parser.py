@@ -3,7 +3,7 @@ from .video_parser import VideoReader
 
 
 class VideoSkipParser(VideoReader):
-    def __init__(self, path, time_=34200):
+    def __init__(self, path, time_=45000):
         super().__init__(path)
         self.start_frame = time_  # 30 min * 60 sec*30fps
         print("init")
