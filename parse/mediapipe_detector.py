@@ -37,6 +37,7 @@ class MediapipeDetector:
         return points
 
     def first_use(self, image, borders):
+        self.use_points = []
         tmp_points = self.get_coords(image)
         rect_up_start, rect_up_end, rect_down_start, rect_down_end = borders
         points = []

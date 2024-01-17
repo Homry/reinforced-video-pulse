@@ -14,6 +14,8 @@ class FaceDetector:
         gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         faces = self.__face_cascade.detectMultiScale(gray_image, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
         if len(faces) == 0:
+            if len(self.prev_borders) == 0:
+                raise Exception("No faces detected")
             rect_up_start, rect_up_end, rect_down_start, rect_down_end = self.prev_borders
             up_image = image[rect_up_start[1]: rect_up_end[1], rect_up_start[0]: rect_up_end[0]]
             down_image = image[rect_down_start[1]: rect_down_end[1], rect_down_start[0]: rect_down_end[0]]

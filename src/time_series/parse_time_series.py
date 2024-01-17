@@ -60,3 +60,8 @@ class ParseTimeSeries(TimeSeries):
         with open(f'{self.__current_save_dir}/{self.__room}/{self.__current_file_name}/{self.__current_window[0]}-'
                   f'{self.__current_window[1]}.npy', 'wb') as f:
             np.save(f, np.array(data))
+
+
+
+
+

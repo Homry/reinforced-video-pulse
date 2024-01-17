@@ -9,7 +9,7 @@ class VideoReader:
         self.frame_height = None
         self.frame_rate = None
         self.total_frames = None
-        self.current_frame = 0
+        self.current_frame = start_time
         self.start_frame = start_time
         self.update(file_path)
         self.open()
@@ -21,7 +21,7 @@ class VideoReader:
         self.frame_height = None
         self.frame_rate = None
         self.total_frames = None
-        self.current_frame = 0
+        self.current_frame = self.start_frame
 
     def open(self):
         self.video_capture = cv2.VideoCapture(self.file_path)
