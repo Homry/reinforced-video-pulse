@@ -31,6 +31,14 @@ class TimeSeries:
     def __str__(self):
         return f'{self._vector}, {len(self._vector[0])}'
 
+    def filter_by_std(self):
+        vector = []
+        for i in self._vector:
+            std = np.std(i)
+            vector.append([i[j] if i[j] < 2*std else np.mean([i[j-1],i[j+1]]) for j in range(len(i))])
+        self._vector = vector
+
+
     def interpolate_signal(self):
         vector = []
         for i in self._vector:

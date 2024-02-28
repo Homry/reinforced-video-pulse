@@ -48,11 +48,15 @@ class ParseTimeSeries(TimeSeries):
             self._vector = None
             self.__current_window = self.__current_window + window_offset
 
+
+
+
     def __processing(self):
         if self.__status:
             current_data = self._vector.copy()
             self.interpolate_signal()
             self.butter_filter()
+            self.filter_by_std()
             pca_data = self.pca(self._vector)
             self.__save_data(pca_data)
             self.__current_item = self.__current_item // 2
