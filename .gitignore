@@ -127,7 +127,12 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-
+*.csv
+*.npy
+*.mp4
+*.mov
+*.png
+*.txt
 # Spyder project settings
 .spyderproject
 .spyproject
