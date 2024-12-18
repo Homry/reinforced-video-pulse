@@ -1,5 +1,7 @@
+import time
+
 import cv2
-from .video_parser import VideoReader
+from src.video_parser.video_parser import VideoReader
 
 
 class WebCam(VideoReader):
@@ -8,13 +10,14 @@ class WebCam(VideoReader):
 
     def open(self):
         self.video_capture = cv2.VideoCapture(2)
+        print('here')
         if not self.video_capture.isOpened():
             raise Exception(f"Failed to open video from webcam")
 
         self.frame_width = int(self.video_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
         self.frame_height = int(self.video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
         self.frame_rate = int(self.video_capture.get(cv2.CAP_PROP_FPS))
-        self.total_frames = 600
+        self.total_frames = 10000
 
 
 if __name__ == '__main__':

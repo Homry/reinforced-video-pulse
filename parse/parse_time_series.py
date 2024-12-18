@@ -5,19 +5,20 @@ from src.time_series.time_series import TimeSeries
 
 
 class ParseTimeSeries(TimeSeries):
-    def __init__(self,  file_name: str, debug: bool = False, current_time=None, direct=None):
+    def __init__(self,  file_name: str = None, debug: bool = False, current_time=None, direct=None):
         super().__init__(debug)
         if current_time is None:
             current_time = [0, 10]
-        self.__current_file_name = file_name.split('/')[-1].split('.')[0]
-        self.__current_window = np.array(current_time)
+        if file_name is not None:
+            self.__current_file_name = file_name.split('/')[-1].split('.')[0]
+        if current_time is not None:
+            self.__current_window = np.array(current_time)
         self.__status = True
         self.__current_item = 0
         if direct is not None:
             if not os.path.isdir(f'../dataset_npy/value/{direct}'):
                 os.mkdir(f'../dataset_npy/value/{direct}')
         self.direct = direct
-        print(self.direct)
 
     def update(self, file_name: str):
         self.__current_file_name = file_name
@@ -48,6 +49,24 @@ class ParseTimeSeries(TimeSeries):
             self._vector = None
             self.__current_window = self.__current_window + window_offset
 
+    def compute(self, vector):
+        if self._vector is None:
+            super().init_vector(vector)
+        else:
+            super().add_in_vector(vector)
+        self.__current_item += 1
+
+        if self.__current_item == 300:
+            self.__current_item = 0
+            self.interpolate_signal()
+            self.butter_filter()
+            self.filter_by_std()
+            pca_data = self.pca(self._vector)
+            self._vector = None
+            return pca_data
+
+
+        return None
 
 
 

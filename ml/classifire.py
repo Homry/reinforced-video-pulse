@@ -8,151 +8,9 @@ from torch import optim
 from torch.utils.data import DataLoader, random_split
 from tqdm import tqdm
 from sklearn.metrics import f1_score, precision_score, recall_score
-from dataset import ClassifireDataset, SelectionDataset
+from ml.dataset import ClassifireDataset, SelectionDataset, PeaksDataset
 
 
-class Classifire(nn.Module):
-    def __init__(self):
-        super(Classifire, self).__init__()
-        self.linear = nn.Sequential(
-            nn.Linear(2499, 2000),
-            nn.ReLU(),
-            nn.Linear(2000, 1500),
-            nn.ReLU(),
-            nn.Linear(1500, 1000),
-            nn.ReLU(),
-            nn.Linear(1000, 500),
-            nn.ReLU(),
-            nn.Linear(500, 250),
-            nn.ReLU(),
-            nn.Linear(250, 1)
-        )
-
-    def forward(self, x):
-        x = self.linear(x)
-        return torch.sigmoid(x)
-
-
-
-
-class ModelTrainer:
-    def __init__(self, model_file, num_epochs=10):
-        print(torch.cuda.is_available())
-        self.model_file = model_file
-        self.loss_history = []
-        self.val_loss_history = []
-        self.num_epochs = num_epochs
-        self.model = Classifire()
-        # self.model.apply(self.weights_init)
-
-
-    def train_model(self):
-        # Load the data
-        dataset = ClassifireDataset()  # Replace YourDataset with your own dataset class
-
-
-
-        # Create the data loaders
-        train_loader = DataLoader(dataset, batch_size=64, shuffle=True)
-
-        # Create the model
-        # model =
-
-
-        # Define the loss function and optimizer
-        criterion = nn.CrossEntropyLoss()
-        optimizer = optim.SGD(self.model.parameters(), lr=0.001, momentum=0.9)
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model.to(device)
-
-        # Train the model
-        for epoch in range(self.num_epochs):
-            epoch_loss = []
-            running_loss = 0.0
-            i = 0
-            for inputs, labels in train_loader:
-                inputs = inputs.to(device)
-                labels = labels.to(device)
-                optimizer.zero_grad()
-
-                # Forward pass
-                inputs = inputs.float()  # Convert inputs to float type
-
-                labels = labels.float()  # Convert outputs to float type
-                outputs = self.model(inputs)
-                # print(outputs)
-                # print(f'{labels = }, {outputs = }')
-                loss = criterion(outputs, labels)
-                # print(loss)
-
-                # Backward pass and optimization
-                loss.backward()
-                optimizer.step()
-
-                epoch_loss.append(loss.item())
-                if i % 2658 == 2657:  # print every 2000 mini-batches
-                    print(f'[{epoch + 1}, {i + 1:5d}] loss: {running_loss / 2658:.3f}')
-                    running_loss = 0.0
-                i += 1
-            #
-            print(f' {epoch = }, {np.array(epoch_loss).mean() = }, lr = {optimizer.param_groups[0]["lr"]}')
-
-            self.loss_history.append(np.array(epoch_loss).mean())
-
-            # Validation
-            # val_loss = self.validate_model(self.model, criterion, val_loader, device)
-            # print(f'Validation Loss: {np.array(val_loss).mean()}')
-            # self.val_loss_history.append(np.array(val_loss).mean())
-        # Save the trained model
-        torch.save(self.model.state_dict(), self.model_file)
-
-    def save(self):
-        torch.save(self.model.state_dict(), self.model_file)
-
-    def validate_model(self, model, criterion, val_loader, device):
-        model.eval()  # Set the model to evaluation mode
-        val_loss = []
-
-        with torch.no_grad():
-            for inputs, labels in val_loader:
-                inputs = inputs.to(device)
-
-                labels = labels.to(device)
-
-                # Forward pass
-                inputs = inputs.float()  # Convert inputs to float type
-                labels = labels.float()  # Convert outputs to float type
-                outputs = model(inputs)
-                loss = criterion(outputs, labels)
-
-                val_loss.append(loss.item())
-
-        model.train()  # Set the model back to training mode
-
-        return val_loss
-
-    def load_model(self):
-        # Create an instance of the model
-        model = Classifire()
-
-        # Load the trained weights
-        model.load_state_dict(torch.load(self.model_file))
-
-        # Send the model to CUDA if available
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        model.to(device)
-
-        return model
-
-    def plot_loss(self):
-        plt.plot(self.loss_history, label='Training Loss')
-        # plt.plot(self.val_loss_history, label='Validation Loss')
-        plt.xlabel('Epoch')
-        plt.legend()
-        plt.ylabel('Loss')
-        plt.title('Training Loss')
-        plt.savefig('classifire.png')
-        plt.show()
 
 
 class SelectModel(nn.Module):
@@ -179,20 +37,47 @@ class SelectModel(nn.Module):
         return torch.log_softmax(x, dim=1)
 
 
+class PeaksModel(nn.Module):
+    def __init__(self):
+        super(PeaksModel, self).__init__()
+        self.net = nn.Sequential(
+            nn.Linear(2600, 2000),
+            nn.ReLU(),
+            nn.Linear(2000, 3000),
+            nn.ReLU(),
+            nn.Linear(3000, 1300),
+            nn.ReLU(),
+            nn.Linear(1300, 1000),
+            nn.ReLU(),
+            nn.Linear(1000, 500),
+            nn.ReLU(),
+            nn.Linear(500, 1000),
+            nn.ReLU(),
+            nn.Linear(1000, 1300*2),
+
+        )
+        self.sig = nn.Sigmoid()
+
+    def forward(self, x):
+        x = self.net(x)
+        x = x.view(x.size(0), 1300, 2)
+        return self.sig(x)
+
+
 class Teacher:
-    def __init__(self, model, num_epochs=10):
+    def __init__(self, model, num_epochs=10, loss_fn=nn.NLLLoss):
         self.model = model()
         self.num_epochs = num_epochs
-        self.criterion = nn.NLLLoss()
+        self.criterion = loss_fn() #nn.NLLLoss()
         self.optimizer = optim.Adam(self.model.parameters(), lr=0.001)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
 
 
-    def train(self):
+    def train(self, dataset_model):
         self.model.train()
         epoch_loss = []
-        dataset = SelectionDataset()
+        dataset = dataset_model()
 
         # Calculate the sizes of each part
         train_size = int(0.7 * len(dataset))
@@ -209,7 +94,10 @@ class Teacher:
         for epoch in range(self.num_epochs):
             for inputs, labels in self.train_loader:
                 inputs = inputs.float().to(self.device)
-                labels = labels.long().to(self.device)
+                labels = labels.long().to(self.device)  # Ensure labels are of type long
+                labels = F.one_hot(labels, num_classes=2)  # One-hot encode the labels
+                labels = labels.float()
+
                 self.optimizer.zero_grad()
 
                 outputs = self.model(inputs)
@@ -233,6 +121,7 @@ class Teacher:
         val_loss = []
         all_outputs = []
         all_labels = []
+        peaks_count = []
         if mode == 'val':
             loader = self.val_loader
         else:
@@ -241,30 +130,41 @@ class Teacher:
             for inputs, labels in  loader:
                 inputs = inputs.float().to(self.device)
                 labels = labels.long().to(self.device)
+
+                labels = F.one_hot(labels, num_classes=2)  # One-hot encode the labels
+                labels = labels.float()
                 outputs = self.model(inputs)
+
                 loss = self.criterion(outputs, labels)
 
                 val_loss.append(loss.item())
-
+                peaks_labels = []
+                peaks_output = []
                 # Convert outputs and labels to numpy arrays and add them to the lists
+                outputs = np.argmax(outputs.cpu().numpy(), axis=-1)
+                all_outputs.extend(outputs)
+                labels = np.argmax(labels.cpu().numpy(), axis=-1)
+                all_labels.extend(labels)
+                peaks_labels = np.count_nonzero(labels, axis=-1)
+                peaks_output = np.count_nonzero(outputs, axis=-1)
+                peaks_count.extend(np.abs(peaks_output-peaks_labels))
 
-                all_outputs.extend(torch.argmax(outputs, dim=1).cpu().numpy())
-                all_labels.extend(labels.cpu().numpy())
 
         # Calculate metrics
-        f1 = f1_score(all_labels, all_outputs, average='weighted')
-        precision = precision_score(all_labels, all_outputs, average='weighted')
-        recall = recall_score(all_labels, all_outputs, average='weighted')
 
-        print(f'Validation Loss: {np.mean(val_loss)}, F1 Score: {f1}, Precision: {precision}, Recall: {recall}')
+        f1 = f1_score(all_labels, all_outputs, average='weighted', zero_division=1)
+        precision = precision_score(all_labels, all_outputs, average='weighted', zero_division=1)
+        recall = recall_score(all_labels, all_outputs, average='weighted',zero_division=1)
+
+        print(f'Validation Loss: {np.mean(val_loss)}, F1 Score: {f1}, Precision: {precision}, Recall: {recall}, peaks = {np.mean(peaks_count)}')
 
         self.model.train()
 
 
 if __name__ == "__main__":
-    trainer = Teacher(SelectModel, num_epochs=30)
+    trainer = Teacher(PeaksModel, num_epochs=30, loss_fn=nn.CrossEntropyLoss) #nn.BCEWithLogitsLoss)
     try:
-        trainer.train()
+        trainer.train(PeaksDataset)
     except KeyboardInterrupt:
         trainer.validate_model('test')
-        trainer.save_model('selection.pth')
+        trainer.save_model('peaks.pth')
